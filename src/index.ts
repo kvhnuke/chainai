@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { signMessage } from './commands/sign-message';
 import { sign } from './commands/sign';
+import { signTypedData } from './commands/sign-typed-data';
 import type { Hex } from 'viem';
 
 const program = new Command();
@@ -70,6 +71,67 @@ program
         hash: options.hash as Hex,
       });
       console.log(`CHAINAI_OK: Hash signed successfully`);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`CHAINAI_ERR: EXECUTION_FAILED — ${message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('sign-typed-data')
+  .description('Sign EIP-712 typed data using a private key')
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .requiredOption(
+    '-d, --data <json>',
+    'EIP-712 typed data as a JSON string containing domain, types, primaryType, and message',
+  )
+  .action(async (options: { privateKey?: string; data: string }) => {
+    try {
+      const privateKey = options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+      if (!privateKey) {
+        throw new Error(
+          'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+        );
+      }
+
+      let parsed: {
+        domain: Record<string, unknown>;
+        types: Record<string, { name: string; type: string }[]>;
+        primaryType: string;
+        message: Record<string, unknown>;
+      };
+      try {
+        parsed = JSON.parse(options.data);
+      } catch {
+        throw new Error(
+          'Invalid JSON provided for --data. Must be a valid JSON string with domain, types, primaryType, and message.',
+        );
+      }
+
+      if (
+        !parsed.domain ||
+        !parsed.types ||
+        !parsed.primaryType ||
+        !parsed.message
+      ) {
+        throw new Error(
+          'Data must contain domain, types, primaryType, and message fields.',
+        );
+      }
+
+      const result = await signTypedData({
+        privateKey: privateKey as Hex,
+        domain: parsed.domain,
+        types: parsed.types,
+        primaryType: parsed.primaryType,
+        message: parsed.message,
+      });
+      console.log(`CHAINAI_OK: Typed data signed successfully`);
       console.log(JSON.stringify(result, null, 2));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
