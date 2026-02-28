@@ -1,3 +1,11 @@
+---
+name: chainai
+description: 'Ethereum & EVM blockchain CLI skill — sign messages, send tokens, swap via 1inch Fusion, check balances, broadcast transactions, and manage wallets across Ethereum and BNB Smart Chain.'
+metadata:
+  author: kvhnuke
+  version: '0.0.4'
+---
+
 # chainai — Agent Skill
 
 > **⚠️ DISCLAIMER — USE AT YOUR OWN RISK**
