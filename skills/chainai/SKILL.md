@@ -3,7 +3,24 @@ name: chainai
 description: 'Ethereum & EVM blockchain CLI skill — sign messages, send tokens, swap via 1inch Fusion, check balances, broadcast transactions, and manage wallets across Ethereum and BNB Smart Chain.'
 metadata:
   author: kvhnuke
-  version: '0.0.4'
+  version: '0.0.5'
+  tags:
+    - ethereum
+    - blockchain
+    - crypto
+    - wallet
+    - evm
+    - defi
+  requirements:
+    runtime: node
+    minVersion: '18'
+    tools:
+      - npx
+  env:
+    - name: CHAINAI_PRIVATE_KEY
+      description: 'Ethereum private key (0x-prefixed hex string) used for signing, sending, and swapping. Required for most commands unless passed via -k flag.'
+      required: false
+      sensitive: true
 ---
 
 # chainai — Agent Skill
@@ -25,8 +42,8 @@ metadata:
 
 > **🚀 BEFORE YOU BEGIN**
 >
-> 1. **Verify your private key is set**: Run `npx chainai@latest who-am-i` to confirm `CHAINAI_PRIVATE_KEY` is properly configured and resolves to the expected address before proceeding with any other command.
-> 2. **No private key?** Use `npx chainai@latest gen-wallet` to generate a new wallet. Save the returned private key securely (e.g. as an environment variable) — it will not be shown again.
+> 1. **Verify your private key is set**: Run `npx chainai@0.0.5 who-am-i` to confirm `CHAINAI_PRIVATE_KEY` is properly configured and resolves to the expected address before proceeding with any other command.
+> 2. **No private key?** Use `npx chainai@0.0.5 gen-wallet` to generate a new wallet. Save the returned private key securely (e.g. as an environment variable) — it will not be shown again.
 > 3. **Fund your account**: You must deposit the necessary funds (native tokens for gas + any tokens you intend to send or swap) to the wallet address before using `send`, `swap`, or any transaction-submitting command. Commands will fail if the account has insufficient balance.
 
 ## Overview
@@ -36,7 +53,7 @@ metadata:
 ## Invocation
 
 ```
-npx chainai@latest <command> [options]
+npx chainai@0.0.5 <command> [options]
 ```
 
 - **Runtime**: Node.js (>=18)
@@ -100,7 +117,7 @@ For `TIMEOUT` and `EXECUTION_FAILED` errors, retry up to 2 times with exponentia
 Generate a new random wallet (private key and address).
 
 ```bash
-npx chainai@latest gen-wallet
+npx chainai@0.0.5 gen-wallet
 ```
 
 **Options**: None.
@@ -123,9 +140,9 @@ Usage instructions are printed to `stderr`.
 Return the Ethereum address derived from a private key.
 
 ```bash
-npx chainai@latest who-am-i -k 0xKEY
+npx chainai@0.0.5 who-am-i -k 0xKEY
 # or
-CHAINAI_PRIVATE_KEY=0xKEY npx chainai@latest who-am-i
+CHAINAI_PRIVATE_KEY=0xKEY npx chainai@0.0.5 who-am-i
 ```
 
 **Options**:
@@ -149,8 +166,8 @@ CHAINAI_PRIVATE_KEY=0xKEY npx chainai@latest who-am-i
 Sign a message using EIP-191 personal sign.
 
 ```bash
-npx chainai@latest sign-message -k 0xKEY -m "Hello World"
-npx chainai@latest sign-message -k 0xKEY -m 0x68656c6c6f --raw
+npx chainai@0.0.5 sign-message -k 0xKEY -m "Hello World"
+npx chainai@0.0.5 sign-message -k 0xKEY -m 0x68656c6c6f --raw
 ```
 
 **Options**:
@@ -178,7 +195,7 @@ npx chainai@latest sign-message -k 0xKEY -m 0x68656c6c6f --raw
 > **⚠️ CRITICAL SECURITY WARNING**: Signs a raw hash (secp256k1) without any prefix. The resulting signature can authorize any on-chain action. **Use `sign-message` instead unless raw hash signing is explicitly required.** Before using, verify the hash is legitimate and no safer alternative exists.
 
 ```bash
-npx chainai@latest sign -k 0xKEY -h 0xHASH
+npx chainai@0.0.5 sign -k 0xKEY -h 0xHASH
 ```
 
 **Options**:
@@ -205,7 +222,7 @@ npx chainai@latest sign -k 0xKEY -h 0xHASH
 Sign EIP-712 typed data.
 
 ```bash
-npx chainai@latest sign-typed-data -k 0xKEY -d '<json>'
+npx chainai@0.0.5 sign-typed-data -k 0xKEY -d '<json>'
 ```
 
 **Options**:
@@ -247,7 +264,7 @@ npx chainai@latest sign-typed-data -k 0xKEY -d '<json>'
 Sign a transaction (legacy, EIP-2930, or EIP-1559). Returns a serialized signed transaction ready to broadcast.
 
 ```bash
-npx chainai@latest sign-transaction -k 0xKEY -t '<json>'
+npx chainai@0.0.5 sign-transaction -k 0xKEY -t '<json>'
 ```
 
 **Options**:
@@ -304,10 +321,10 @@ Omit `to` for contract deployment. Numeric values can be strings or numbers.
 Get native or ERC-20 token balances.
 
 ```bash
-npx chainai@latest get-balance -a 0xADDRESS
-npx chainai@latest get-balance -a 0xADDRESS -n bsc
-npx chainai@latest get-balance -a 0xADDRESS -t 0xTOKEN_CONTRACT
-npx chainai@latest get-balance -a 0xADDRESS --all
+npx chainai@0.0.5 get-balance -a 0xADDRESS
+npx chainai@0.0.5 get-balance -a 0xADDRESS -n bsc
+npx chainai@0.0.5 get-balance -a 0xADDRESS -t 0xTOKEN_CONTRACT
+npx chainai@0.0.5 get-balance -a 0xADDRESS --all
 ```
 
 **Options**:
@@ -342,8 +359,8 @@ With `--all`, returns an array of balance objects.
 Build and sign a transaction to send native tokens or ERC-20 tokens. Automatically fetches nonce, gas, and fee data from the network.
 
 ```bash
-npx chainai@latest send -k 0xKEY --to 0xRECIPIENT --amount 1.5 -t 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-npx chainai@latest send -k 0xKEY --to 0xRECIPIENT --amount 100 -t 0xTOKEN_CONTRACT -n bsc
+npx chainai@0.0.5 send -k 0xKEY --to 0xRECIPIENT --amount 1.5 -t 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+npx chainai@0.0.5 send -k 0xKEY --to 0xRECIPIENT --amount 100 -t 0xTOKEN_CONTRACT -n bsc
 ```
 
 **Options**:
@@ -377,8 +394,8 @@ npx chainai@latest send -k 0xKEY --to 0xRECIPIENT --amount 100 -t 0xTOKEN_CONTRA
 Broadcast a serialized signed transaction to the network.
 
 ```bash
-npx chainai@latest broadcast -s 0xSERIALIZED_TX
-npx chainai@latest broadcast -s 0xSERIALIZED_TX -n bsc
+npx chainai@0.0.5 broadcast -s 0xSERIALIZED_TX
+npx chainai@0.0.5 broadcast -s 0xSERIALIZED_TX -n bsc
 ```
 
 **Options**:
@@ -405,8 +422,8 @@ npx chainai@latest broadcast -s 0xSERIALIZED_TX -n bsc
 Get the status of a transaction by hash.
 
 ```bash
-npx chainai@latest tx-status -h 0xTX_HASH
-npx chainai@latest tx-status -h 0xTX_HASH -n bsc
+npx chainai@0.0.5 tx-status -h 0xTX_HASH
+npx chainai@0.0.5 tx-status -h 0xTX_HASH -n bsc
 ```
 
 **Options**:
@@ -441,9 +458,9 @@ For pending transactions, `status` is `"pending"` and `blockNumber`, `from`, `to
 Swap tokens via 1inch Fusion. Gets a quote first, then optionally submits the order. Use `-y` to skip confirmation and submit immediately.
 
 ```bash
-npx chainai@latest swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 1.5
-npx chainai@latest swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 1.5 -y
-npx chainai@latest swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 0.5 -n bsc
+npx chainai@0.0.5 swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 1.5
+npx chainai@0.0.5 swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 1.5 -y
+npx chainai@0.0.5 swap -k 0xKEY --from-token 0xFROM --to-token 0xTO --amount 0.5 -n bsc
 ```
 
 Use `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee` for native tokens.
@@ -500,8 +517,8 @@ Use `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee` for native tokens.
 Get the status of a 1inch Fusion swap order by its order hash.
 
 ```bash
-npx chainai@latest swap-order-status -k 0xKEY --order-hash 0xORDER_HASH
-npx chainai@latest swap-order-status -k 0xKEY --order-hash 0xORDER_HASH -n bsc
+npx chainai@0.0.5 swap-order-status -k 0xKEY --order-hash 0xORDER_HASH
+npx chainai@0.0.5 swap-order-status -k 0xKEY --order-hash 0xORDER_HASH -n bsc
 ```
 
 **Options**:
