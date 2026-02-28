@@ -4,6 +4,8 @@ import { Command } from 'commander';
 import { signMessage } from './commands/sign-message';
 import { sign } from './commands/sign';
 import { signTypedData } from './commands/sign-typed-data';
+import { signTransaction } from './commands/sign-transaction';
+import { getBalance } from './commands/get-balance';
 import type { Hex } from 'viem';
 
 const program = new Command();
@@ -139,6 +141,87 @@ program
       process.exit(1);
     }
   });
+
+program
+  .command('sign-transaction')
+  .description(
+    'Sign a transaction using a private key (produces a serialized signed transaction ready to broadcast)',
+  )
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .requiredOption(
+    '-t, --transaction <json>',
+    'Transaction object as a JSON string (e.g. {"to":"0x...","value":"0x...","chainId":1,...})',
+  )
+  .action(async (options: { privateKey?: string; transaction: string }) => {
+    try {
+      const privateKey = options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+      if (!privateKey) {
+        throw new Error(
+          'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+        );
+      }
+
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(options.transaction);
+      } catch {
+        throw new Error(
+          'Invalid JSON provided for --transaction. Must be a valid JSON string representing a transaction object.',
+        );
+      }
+
+      const result = await signTransaction({
+        privateKey: privateKey as Hex,
+        transaction: parsed as any,
+      });
+      console.log(`CHAINAI_OK: Transaction signed successfully`);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`CHAINAI_ERR: EXECUTION_FAILED — ${message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('get-balance')
+  .description(
+    'Get the balance of a native token or ERC-20 token for a given address',
+  )
+  .requiredOption(
+    '-a, --address <address>',
+    'Wallet address (0x-prefixed hex string)',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .option(
+    '-t, --token <token>',
+    'Token symbol or contract address (default: native token e.g. ETH)',
+    'ETH',
+  )
+  .action(
+    async (options: { address: string; network: string; token: string }) => {
+      try {
+        const result = await getBalance({
+          address: options.address as Hex,
+          network: options.network,
+          token: options.token,
+        });
+        console.log(`CHAINAI_OK: Balance retrieved successfully`);
+        console.log(JSON.stringify(result, null, 2));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+        process.exit(1);
+      }
+    },
+  );
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(
