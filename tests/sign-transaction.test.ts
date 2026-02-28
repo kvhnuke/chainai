@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signTransaction } from '../commands/sign-transaction';
+import { signTransaction } from '../src/commands/sign-transaction';
 import { privateKeyToAccount } from 'viem/accounts';
 import { parseTransaction, recoverTransactionAddress } from 'viem';
 import type { Hex } from 'viem';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { send } from '../commands/send';
+import { send } from '../src/commands/send';
 import type { Hex } from 'viem';
 
 const TEST_PRIVATE_KEY: Hex =
@@ -9,8 +9,8 @@ const NATIVE_TOKEN = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const USDT_CONTRACT = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 
 // Mock utils to avoid real RPC calls
-vi.mock('../utils', async () => {
-  const actual = await vi.importActual<typeof import('../utils')>('../utils');
+vi.mock('../src/utils', async () => {
+  const actual = await vi.importActual<typeof import('../src/utils')>('../src/utils');
   return {
     ...actual,
     createNetworkClient: vi.fn(() => ({

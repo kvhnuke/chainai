@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { txStatus } from '../commands/tx-status';
+import { txStatus } from '../src/commands/tx-status';
 import type { Hex } from 'viem';
 
 const FAKE_TX_HASH =
@@ -14,8 +14,8 @@ const MOCK_RECEIPT = {
   effectiveGasPrice: BigInt(30000000000),
 };
 
-vi.mock('../utils', async () => {
-  const actual = await vi.importActual<typeof import('../utils')>('../utils');
+vi.mock('../src/utils', async () => {
+  const actual = await vi.importActual<typeof import('../src/utils')>('../src/utils');
   return {
     ...actual,
     createNetworkClient: vi.fn(() => ({
@@ -44,7 +44,7 @@ describe('tx-status', () => {
   });
 
   it('should return reverted status for a failed transaction', async () => {
-    const { createNetworkClient } = await import('../utils');
+    const { createNetworkClient } = await import('../src/utils');
     (createNetworkClient as ReturnType<typeof vi.fn>).mockReturnValueOnce({
       getTransactionReceipt: vi.fn().mockResolvedValue({
         ...MOCK_RECEIPT,
@@ -57,7 +57,7 @@ describe('tx-status', () => {
   });
 
   it('should return pending status when no receipt exists', async () => {
-    const { createNetworkClient } = await import('../utils');
+    const { createNetworkClient } = await import('../src/utils');
     (createNetworkClient as ReturnType<typeof vi.fn>).mockReturnValueOnce({
       getTransactionReceipt: vi.fn().mockResolvedValue(null),
     });

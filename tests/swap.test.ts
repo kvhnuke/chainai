@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getSwapQuote, submitSwapOrder } from '../commands/swap';
+import { getSwapQuote, submitSwapOrder } from '../src/commands/swap';
 import type { Hex } from 'viem';
 
 const TEST_PRIVATE_KEY: Hex =
@@ -18,7 +18,7 @@ const MOCK_ORDER = {
 };
 
 // Mock OneInchFusion
-vi.mock('../oneInchFusion/oneInchFusion', () => {
+vi.mock('../src/oneInchFusion/oneInchFusion', () => {
   const MockOneInchFusion = vi.fn(function (this: any) {
     this.getQuote = vi.fn().mockResolvedValue(MOCK_QUOTE);
     this.submitOrder = vi.fn().mockResolvedValue(MOCK_ORDER);
@@ -29,7 +29,7 @@ vi.mock('../oneInchFusion/oneInchFusion', () => {
 });
 
 // Mock utils to provide createNetworkClient with a mock readContract
-vi.mock('../utils', async (importOriginal) => {
+vi.mock('../src/utils', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
@@ -159,7 +159,7 @@ describe('swap', () => {
         network: 'mainnet',
       });
 
-      const OneInchFusion = (await import('../oneInchFusion/oneInchFusion'))
+      const OneInchFusion = (await import('../src/oneInchFusion/oneInchFusion'))
         .default;
       const instance = (OneInchFusion as any).mock.results[0].value;
       expect(instance.isApprovalRequired).toHaveBeenCalledOnce();
@@ -168,7 +168,7 @@ describe('swap', () => {
     });
 
     it('should call setApproval when approval is required', async () => {
-      const OneInchFusion = (await import('../oneInchFusion/oneInchFusion'))
+      const OneInchFusion = (await import('../src/oneInchFusion/oneInchFusion'))
         .default;
 
       // Override mock to require approval for this test

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { broadcast } from '../commands/broadcast';
+import { broadcast } from '../src/commands/broadcast';
 import type { Hex } from 'viem';
 
 const FAKE_TX_HASH =
@@ -9,8 +9,8 @@ const FAKE_TX_HASH =
 const SERIALIZED_TX = '0x02f86c0105843b9aca00851bf08eb000825208' as Hex;
 
 // Mock utils to avoid real RPC calls
-vi.mock('../utils', async () => {
-  const actual = await vi.importActual<typeof import('../utils')>('../utils');
+vi.mock('../src/utils', async () => {
+  const actual = await vi.importActual<typeof import('../src/utils')>('../src/utils');
   return {
     ...actual,
     createNetworkClient: vi.fn(() => ({

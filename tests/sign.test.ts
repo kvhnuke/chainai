@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sign } from '../commands/sign';
+import { sign } from '../src/commands/sign';
 import { privateKeyToAccount } from 'viem/accounts';
 import { keccak256, toHex } from 'viem';
 import type { Hex } from 'viem';

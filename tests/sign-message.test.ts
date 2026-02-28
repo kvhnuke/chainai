@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signMessage } from '../commands/sign-message';
+import { signMessage } from '../src/commands/sign-message';
 import { privateKeyToAccount } from 'viem/accounts';
 import { verifyMessage } from 'viem';
 import type { Hex } from 'viem';

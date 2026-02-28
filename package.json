@@ -14,6 +14,7 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "yarn clean && yarn build",
+    "publish:live": "yarn prepublishOnly && yarn npm publish --access public",
     "test": "vitest run --exclude 'dist/**'",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getBalance } from '../commands/get-balance';
+import { getBalance } from '../src/commands/get-balance';
 import type { Hex } from 'viem';
 
 const TEST_ADDRESS: Hex = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 // Mock getTokenBalances and createNetworkClient to avoid real API/RPC calls
-vi.mock('../utils', async () => {
-  const actual = await vi.importActual<typeof import('../utils')>('../utils');
+vi.mock('../src/utils', async () => {
+  const actual = await vi.importActual<typeof import('../src/utils')>('../src/utils');
   return {
     ...actual,
     getTokenBalances: vi.fn().mockResolvedValue([

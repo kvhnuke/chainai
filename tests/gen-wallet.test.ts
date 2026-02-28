@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { genWallet } from '../commands/gen-wallet';
+import { genWallet } from '../src/commands/gen-wallet';
 import { isAddress, isHex } from 'viem';
 
 describe('gen-wallet', () => {

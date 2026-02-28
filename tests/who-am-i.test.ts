@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { whoAmI } from '../commands/who-am-i';
+import { whoAmI } from '../src/commands/who-am-i';
 import type { Hex } from 'viem';
 
 const TEST_PRIVATE_KEY: Hex =

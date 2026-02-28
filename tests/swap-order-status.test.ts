@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { swapOrderStatus } from '../commands/swap-order-status';
+import { swapOrderStatus } from '../src/commands/swap-order-status';
 import type { Hex } from 'viem';
 
 const TEST_PRIVATE_KEY: Hex =
@@ -23,7 +23,7 @@ const MOCK_ORDER_STATUS_PENDING = {
 };
 
 // Mock OneInchFusion
-vi.mock('../oneInchFusion/oneInchFusion', () => {
+vi.mock('../src/oneInchFusion/oneInchFusion', () => {
   const MockOneInchFusion = vi.fn(function (this: any) {
     this.getOrderStatus = vi.fn().mockResolvedValue(MOCK_ORDER_STATUS_FILLED);
   });
@@ -53,7 +53,7 @@ describe('swap-order-status', () => {
   });
 
   it('should return status for a pending order', async () => {
-    const OneInchFusion = (await import('../oneInchFusion/oneInchFusion'))
+    const OneInchFusion = (await import('../src/oneInchFusion/oneInchFusion'))
       .default;
     (OneInchFusion as any).mockImplementation(function (this: any) {
       this.getOrderStatus = vi

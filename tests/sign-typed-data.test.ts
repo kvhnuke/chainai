@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signTypedData } from '../commands/sign-typed-data';
+import { signTypedData } from '../src/commands/sign-typed-data';
 import { privateKeyToAccount } from 'viem/accounts';
 import { verifyTypedData } from 'viem';
 import type { Hex } from 'viem';
