@@ -12,6 +12,8 @@ import { broadcast } from './commands/broadcast';
 import { whoAmI } from './commands/who-am-i';
 import { txStatus } from './commands/tx-status';
 import { getSwapQuote, submitSwapOrder } from './commands/swap';
+import { swapOrderStatus } from './commands/swap-order-status';
+import { genWallet } from './commands/gen-wallet';
 import type { Hex } from 'viem';
 
 function askYesNo(question: string): Promise<boolean> {
@@ -493,6 +495,69 @@ program
       }
     },
   );
+
+program
+  .command('swap-order-status')
+  .description('Get the status of a swap order by its order hash')
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .requiredOption(
+    '--order-hash <hash>',
+    'Order hash returned from the swap command',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .action(
+    async (options: {
+      privateKey?: string;
+      orderHash: string;
+      network: string;
+    }) => {
+      try {
+        const privateKey =
+          options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+        if (!privateKey) {
+          throw new Error(
+            'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+          );
+        }
+        const result = await swapOrderStatus({
+          privateKey: privateKey as Hex,
+          orderHash: options.orderHash,
+          network: options.network,
+        });
+        console.log(`CHAINAI_OK: Swap order status retrieved successfully`);
+        console.log(JSON.stringify(result, null, 2));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command('gen-wallet')
+  .description('Generate a new random wallet (private key and address)')
+  .action(() => {
+    try {
+      const result = genWallet();
+      console.log(`CHAINAI_OK: Wallet generated successfully`);
+      console.log(JSON.stringify(result, null, 2));
+      console.error(
+        `\nTo use this wallet, either:\n  1. Pass it via -k flag: -k ${result.privateKey}\n  2. Save it to your environment: export CHAINAI_PRIVATE_KEY=${result.privateKey}`,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+      process.exit(1);
+    }
+  });
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(
