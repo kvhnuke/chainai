@@ -10,6 +10,8 @@ import { getBalance } from './commands/get-balance';
 import { send } from './commands/send';
 import { broadcast } from './commands/broadcast';
 import { whoAmI } from './commands/who-am-i';
+import { txStatus } from './commands/tx-status';
+import { getSwapQuote, submitSwapOrder } from './commands/swap';
 import type { Hex } from 'viem';
 
 function askYesNo(question: string): Promise<boolean> {
@@ -389,6 +391,108 @@ program
       process.exit(1);
     }
   });
+
+program
+  .command('tx-status')
+  .description('Get the status of a transaction by its hash')
+  .requiredOption(
+    '-h, --hash <hash>',
+    'Transaction hash (0x-prefixed hex string)',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .action(async (options: { hash: string; network: string }) => {
+    try {
+      const result = await txStatus({
+        hash: options.hash as Hex,
+        network: options.network,
+      });
+      console.log(`CHAINAI_OK: Transaction status retrieved successfully`);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('swap')
+  .description(
+    'Swap tokens via 1inch Fusion (get quote, optionally submit order)',
+  )
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .requiredOption(
+    '--from-token <address>',
+    'Source token contract address (use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee for native token)',
+  )
+  .requiredOption(
+    '--to-token <address>',
+    'Destination token contract address (use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee for native token)',
+  )
+  .requiredOption(
+    '--amount <amount>',
+    'Amount to swap in human-readable units (e.g. "1.5")',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .option(
+    '-y, --yes',
+    'Skip confirmation prompt and submit the order immediately',
+  )
+  .action(
+    async (options: {
+      privateKey?: string;
+      fromToken: string;
+      toToken: string;
+      amount: string;
+      network: string;
+      yes?: boolean;
+    }) => {
+      try {
+        const privateKey =
+          options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+        if (!privateKey) {
+          throw new Error(
+            'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+          );
+        }
+
+        const swapInput = {
+          privateKey: privateKey as Hex,
+          fromToken: options.fromToken,
+          toToken: options.toToken,
+          amount: options.amount,
+          network: options.network,
+        };
+
+        const quoteResult = await getSwapQuote(swapInput);
+        console.log(`CHAINAI_OK: Swap quote retrieved successfully`);
+        console.log(JSON.stringify(quoteResult, null, 2));
+
+        const shouldSubmit =
+          options.yes || (await askYesNo('\nProceed with swap? (y/N): '));
+        if (shouldSubmit) {
+          const orderResult = await submitSwapOrder(swapInput);
+          console.log(`CHAINAI_OK: Swap order submitted successfully`);
+          console.log(JSON.stringify(orderResult, null, 2));
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+        process.exit(1);
+      }
+    },
+  );
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(
