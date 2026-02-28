@@ -202,16 +202,23 @@ program
   )
   .option(
     '-t, --token <token>',
-    'Token symbol or contract address (default: native token e.g. ETH)',
-    'ETH',
+    'Token contract address (default: 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee for native token)',
+    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
   )
+  .option('--all', 'Return all token balances (native + ERC-20)')
   .action(
-    async (options: { address: string; network: string; token: string }) => {
+    async (options: {
+      address: string;
+      network: string;
+      token: string;
+      all?: boolean;
+    }) => {
       try {
         const result = await getBalance({
           address: options.address as Hex,
           network: options.network,
           token: options.token,
+          all: options.all,
         });
         console.log(`CHAINAI_OK: Balance retrieved successfully`);
         console.log(JSON.stringify(result, null, 2));

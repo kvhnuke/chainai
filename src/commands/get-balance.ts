@@ -1,12 +1,16 @@
-import { createPublicClient, formatUnits, http } from 'viem';
+import { createPublicClient, formatUnits, http, isAddress } from 'viem';
 import type { Hex, Chain } from 'viem';
 import { SUPPORTED_NETWORKS, SUPPORTED_NETWORKS_NAME_MAP } from '../configs';
 import { getTokenBalances } from '../utils';
+
+const NATIVE_TOKEN_ADDRESS =
+  '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' as const;
 
 export interface GetBalanceInput {
   address: Hex;
   network?: string;
   token?: string;
+  all?: boolean;
 }
 
 export interface GetBalanceResult {
@@ -61,8 +65,13 @@ function resolveNetwork(network: string): Chain {
  */
 export async function getBalance(
   input: GetBalanceInput,
-): Promise<GetBalanceResult> {
-  const { address, network = 'mainnet', token = 'ETH' } = input;
+): Promise<GetBalanceResult | GetBalanceResult[]> {
+  const {
+    address,
+    network = 'mainnet',
+    token = NATIVE_TOKEN_ADDRESS,
+    all = false,
+  } = input;
 
   if (!address || !address.startsWith('0x')) {
     throw new Error('Address must be a valid 0x-prefixed hex string');
@@ -80,11 +89,17 @@ export async function getBalance(
     );
   }
 
-  const nativeSymbol = chain.nativeCurrency.symbol.toUpperCase();
-  const isNative =
-    token.toUpperCase() === nativeSymbol ||
-    (token.toUpperCase() === 'ETH' && chain.id === 1) ||
-    (token.toUpperCase() === 'BNB' && chain.id === 56);
+  if (all) {
+    return getAllBalances(address, chain, networkConfig);
+  }
+
+  if (!isAddress(token)) {
+    throw new Error(
+      `Token must be a valid 0x-prefixed address. Use ${NATIVE_TOKEN_ADDRESS} for native token.`,
+    );
+  }
+
+  const isNative = token.toLowerCase() === NATIVE_TOKEN_ADDRESS;
 
   if (isNative) {
     const client = createPublicClient({
@@ -102,18 +117,14 @@ export async function getBalance(
       balance: formatted,
       rawBalance: balanceWei.toString(),
       decimals: chain.nativeCurrency.decimals,
-      contract: null,
+      contract: NATIVE_TOKEN_ADDRESS,
     };
   }
 
   // ERC-20 token: look up from balances API
   const balances = await getTokenBalances(chain.id, address);
-  const tokenUpper = token.toUpperCase();
-  const found = balances.find(
-    (t) =>
-      t.symbol.toUpperCase() === tokenUpper ||
-      t.contract.toLowerCase() === token.toLowerCase(),
-  );
+  const tokenLower = token.toLowerCase();
+  const found = balances.find((t) => t.contract.toLowerCase() === tokenLower);
 
   if (!found) {
     throw new Error(
@@ -133,4 +144,33 @@ export async function getBalance(
     decimals: found.decimals,
     contract: found.contract,
   };
+}
+
+/**
+ * Fetches all token balances (native + ERC-20) for a given address.
+ */
+async function getAllBalances(
+  address: Hex,
+  chain: Chain,
+  networkConfig: { balances: string; nodeUrl: string },
+): Promise<GetBalanceResult[]> {
+  const [tokenBalances] = await Promise.all([
+    getTokenBalances(chain.id, address),
+  ]);
+  const results: GetBalanceResult[] = [];
+  // All balances including Native
+  for (const t of tokenBalances) {
+    const raw = BigInt(t.balance);
+    results.push({
+      address,
+      network: chain.name,
+      token: t.symbol,
+      balance: formatUnits(raw, t.decimals),
+      rawBalance: raw.toString(),
+      decimals: t.decimals,
+      contract: t.contract,
+    });
+  }
+
+  return results;
 }

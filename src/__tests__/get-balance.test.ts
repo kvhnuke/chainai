@@ -3,6 +3,7 @@ import { getBalance } from '../commands/get-balance';
 import type { Hex } from 'viem';
 
 const TEST_ADDRESS: Hex = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 // Mock viem's createPublicClient to avoid real RPC calls
 vi.mock('viem', async () => {
@@ -49,13 +50,29 @@ describe('getBalance', () => {
       address: TEST_ADDRESS,
     });
 
-    expect(result.address).toBe(TEST_ADDRESS);
-    expect(result.network).toBe('Ethereum');
-    expect(result.token).toBe('ETH');
-    expect(result.balance).toBe('2.5');
-    expect(result.rawBalance).toBe('2500000000000000000');
-    expect(result.decimals).toBe(18);
-    expect(result.contract).toBeNull();
+    expect(!Array.isArray(result)).toBe(true);
+    const balance = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(balance.address).toBe(TEST_ADDRESS);
+    expect(balance.network).toBe('Ethereum');
+    expect(balance.token).toBe('ETH');
+    expect(balance.balance).toBe('2.5');
+    expect(balance.rawBalance).toBe('2500000000000000000');
+    expect(balance.decimals).toBe(18);
+    expect(balance.contract).toBeNull();
+  });
+
+  it('should return native ETH balance with explicit native token address', async () => {
+    const result = await getBalance({
+      address: TEST_ADDRESS,
+      token: NATIVE_TOKEN_ADDRESS,
+    });
+
+    expect(!Array.isArray(result)).toBe(true);
+    const balance = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(balance.token).toBe('ETH');
+    expect(balance.contract).toBeNull();
   });
 
   it('should accept "ethereum" as network name', async () => {
@@ -64,8 +81,11 @@ describe('getBalance', () => {
       network: 'ethereum',
     });
 
-    expect(result.network).toBe('Ethereum');
-    expect(result.token).toBe('ETH');
+    expect(!Array.isArray(result)).toBe(true);
+    const balance = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(balance.network).toBe('Ethereum');
+    expect(balance.token).toBe('ETH');
   });
 
   it('should accept chain ID as network', async () => {
@@ -74,18 +94,10 @@ describe('getBalance', () => {
       network: '1',
     });
 
-    expect(result.network).toBe('Ethereum');
-  });
-
-  it('should fetch ERC-20 token balance by symbol', async () => {
-    const result = await getBalance({
-      address: TEST_ADDRESS,
-      token: 'USDT',
-    });
-
-    expect(result.token).toBe('USDT');
-    expect(result.decimals).toBe(6);
-    expect(result.contract).toBe('0xdac17f958d2ee523a2206206994597c13d831ec7');
+    expect(!Array.isArray(result)).toBe(true);
+    const balance = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(balance.network).toBe('Ethereum');
   });
 
   it('should fetch ERC-20 token balance by contract address', async () => {
@@ -94,8 +106,11 @@ describe('getBalance', () => {
       token: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     });
 
-    expect(result.token).toBe('USDT');
-    expect(result.contract).toBe('0xdac17f958d2ee523a2206206994597c13d831ec7');
+    expect(!Array.isArray(result)).toBe(true);
+    const balance = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(balance.token).toBe('USDT');
+    expect(balance.contract).toBe('0xdac17f958d2ee523a2206206994597c13d831ec7');
   });
 
   it('should throw for an unsupported network', async () => {
@@ -119,21 +134,77 @@ describe('getBalance', () => {
     await expect(
       getBalance({
         address: TEST_ADDRESS,
-        token: 'NONEXISTENT',
+        token: '0x0000000000000000000000000000000000000001',
       }),
-    ).rejects.toThrow('Token "NONEXISTENT" not found');
+    ).rejects.toThrow('not found');
+  });
+
+  it('should throw for non-address token value', async () => {
+    await expect(
+      getBalance({
+        address: TEST_ADDRESS,
+        token: 'USDT',
+      }),
+    ).rejects.toThrow('Token must be a valid 0x-prefixed address');
   });
 
   it('should return native BNB balance on BSC', async () => {
     const result = await getBalance({
       address: TEST_ADDRESS,
       network: 'bsc',
-      token: 'BNB',
+      token: NATIVE_TOKEN_ADDRESS,
     });
 
-    expect(result.network).toBe('BNB Smart Chain');
-    expect(result.token).toBe('BNB');
-    expect(result.decimals).toBe(18);
-    expect(result.contract).toBeNull();
+    expect(result).not.toBeInstanceOf(Array);
+    const single = result as Awaited<ReturnType<typeof getBalance>> &
+      Record<string, unknown>;
+    expect(single.network).toBe('BNB Smart Chain');
+    expect(single.token).toBe('BNB');
+    expect(single.decimals).toBe(18);
+    expect(single.contract).toBeNull();
+  });
+
+  it('should return all balances when all flag is set', async () => {
+    const result = await getBalance({
+      address: TEST_ADDRESS,
+      all: true,
+    });
+
+    expect(Array.isArray(result)).toBe(true);
+    const balances = result as Awaited<ReturnType<typeof getBalance>> &
+      unknown[];
+    // Native + 2 ERC-20 tokens from mock
+    expect(balances).toHaveLength(3);
+    expect(balances[0]).toMatchObject({
+      token: 'ETH',
+      contract: null,
+      balance: '2.5',
+      rawBalance: '2500000000000000000',
+    });
+    expect(balances[1]).toMatchObject({
+      token: 'USDT',
+      contract: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    });
+    expect(balances[2]).toMatchObject({
+      token: 'USDC',
+      contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    });
+  });
+
+  it('should return all balances on BSC when all flag is set', async () => {
+    const result = await getBalance({
+      address: TEST_ADDRESS,
+      network: 'bsc',
+      all: true,
+    });
+
+    expect(Array.isArray(result)).toBe(true);
+    const balances = result as Awaited<ReturnType<typeof getBalance>> &
+      unknown[];
+    expect(balances[0]).toMatchObject({
+      token: 'BNB',
+      network: 'BNB Smart Chain',
+      contract: null,
+    });
   });
 });

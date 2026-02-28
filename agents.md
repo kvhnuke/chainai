@@ -364,11 +364,12 @@ npx chainai@latest get-balance [options]
 
 #### Options
 
-| Flag                      | Required | Description                                                                                                                     |
-| ------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `-a, --address <address>` | Yes      | Wallet address (`0x`-prefixed hex string).                                                                                      |
-| `-n, --network <network>` | No       | Network name, alias, or chain ID. Defaults to `mainnet`. Supported: `mainnet`/`ethereum`/`eth` (1), `bsc`/`binance`/`bnb` (56). |
-| `-t, --token <token>`     | No       | Token symbol or contract address. Defaults to the native token (e.g., `ETH` on mainnet, `BNB` on BSC).                          |
+| Flag                      | Required | Description                                                                                                                                  |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-a, --address <address>` | Yes      | Wallet address (`0x`-prefixed hex string).                                                                                                   |
+| `-n, --network <network>` | No       | Network name, alias, or chain ID. Defaults to `mainnet`. Supported: `mainnet`/`ethereum`/`eth` (1), `bsc`/`binance`/`bnb` (56).              |
+| `-t, --token <token>`     | No       | Token contract address. Defaults to `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee` (native token). Use the contract address for ERC-20 tokens. |
+| `--all`                   | No       | Return all token balances (native + ERC-20). When set, `-t` is ignored.                                                                      |
 
 #### Supported Networks
 
@@ -409,24 +410,53 @@ CHAINAI_OK: Balance retrieved successfully
 }
 ```
 
+When `--all` is used, returns an array of all balances:
+
+```
+CHAINAI_OK: Balance retrieved successfully
+[
+  {
+    "address": "0x...",
+    "network": "Ethereum",
+    "token": "ETH",
+    "balance": "1.5",
+    "rawBalance": "1500000000000000000",
+    "decimals": 18,
+    "contract": null
+  },
+  {
+    "address": "0x...",
+    "network": "Ethereum",
+    "token": "USDT",
+    "balance": "100.0",
+    "rawBalance": "100000000",
+    "decimals": 6,
+    "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  }
+]
+```
+
 #### Example
 
 ```bash
 # Get native ETH balance on mainnet (defaults)
 npx chainai@latest get-balance -a 0xYOUR_ADDRESS
 
-# Get native ETH balance with explicit network
-npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n ethereum
+# Get native token balance with explicit token address
+npx chainai@latest get-balance -a 0xYOUR_ADDRESS -t 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 
 # Get native BNB balance on BSC
-npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n bsc -t BNB
-
-# Get ERC-20 token balance by symbol
-npx chainai@latest get-balance -a 0xYOUR_ADDRESS -t USDT
+npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n bsc
 
 # Get ERC-20 token balance by contract address
 npx chainai@latest get-balance -a 0xYOUR_ADDRESS -t 0xdac17f958d2ee523a2206206994597c13d831ec7
 
 # Using chain ID as network
-npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n 56 -t BNB
+npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n 56 -t 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
+# Get all token balances
+npx chainai@latest get-balance -a 0xYOUR_ADDRESS --all
+
+# Get all token balances on BSC
+npx chainai@latest get-balance -a 0xYOUR_ADDRESS -n bsc --all
 ```
