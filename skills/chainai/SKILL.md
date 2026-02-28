@@ -3,27 +3,24 @@ name: chainai
 description: 'Ethereum & EVM blockchain CLI skill — sign messages, send tokens, swap via 1inch Fusion, check balances, broadcast transactions, and manage wallets across Ethereum and BNB Smart Chain.'
 metadata:
   author: kvhnuke
-  version: '0.0.5'
-  tags:
-    - ethereum
-    - blockchain
-    - crypto
-    - wallet
-    - evm
-    - defi
-  requirements:
-    runtime: node
-    minVersion: '18'
-    tools:
-      - npx
-  env:
-    - name: CHAINAI_PRIVATE_KEY
-      description: 'Ethereum private key (0x-prefixed hex string) used for signing, sending, and swapping. Required for most commands unless passed via -k flag.'
-      required: false
-      sensitive: true
+  version: 0.0.6
+  openclaw:
+    requires:
+      env:
+        - CHAINAI_PRIVATE_KEY
+      bins:
+        - npx
+        - node
+    primaryEnv: CHAINAI_PRIVATE_KEY
+    emoji: '⧫'
+    homepage: https://github.com/kvhnuke/chainai
+    install:
+      - kind: node
+        package: chainai
+        bins: [chainai]
 ---
 
-# chainai — Agent Skill
+# chainai — Ethereum Transactions Skill
 
 > **⚠️ DISCLAIMER — USE AT YOUR OWN RISK**
 >
