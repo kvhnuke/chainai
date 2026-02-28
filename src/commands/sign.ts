@@ -1,6 +1,6 @@
-import { privateKeyToAccount } from 'viem/accounts';
 import { isHex } from 'viem';
 import type { Hex } from 'viem';
+import { validateAndCreateAccount } from '../utils';
 
 export interface SignInput {
   privateKey: Hex;
@@ -29,10 +29,6 @@ export interface SignResult {
 export async function sign(input: SignInput): Promise<SignResult> {
   const { privateKey, hash } = input;
 
-  if (!privateKey || !privateKey.startsWith('0x')) {
-    throw new Error('Private key must be a hex string starting with 0x');
-  }
-
   if (!hash || !isHex(hash, { strict: true })) {
     throw new Error('Hash must be a valid 0x-prefixed hex string');
   }
@@ -42,7 +38,7 @@ export async function sign(input: SignInput): Promise<SignResult> {
     throw new Error('Hash must be exactly 32 bytes (64 hex characters)');
   }
 
-  const account = privateKeyToAccount(privateKey);
+  const account = validateAndCreateAccount(privateKey);
   const signature = await account.sign({ hash });
 
   return {

@@ -1,4 +1,3 @@
-import { privateKeyToAccount } from 'viem/accounts';
 import { isHex } from 'viem';
 import type {
   Hex,
@@ -6,6 +5,7 @@ import type {
   TransactionSerializableEIP2930,
   TransactionSerializableLegacy,
 } from 'viem';
+import { validateAndCreateAccount } from '../utils';
 
 export type TransactionInput =
   | TransactionSerializableLegacy
@@ -37,10 +37,6 @@ export async function signTransaction(
 ): Promise<SignTransactionResult> {
   const { privateKey, transaction } = input;
 
-  if (!privateKey || !privateKey.startsWith('0x')) {
-    throw new Error('Private key must be a hex string starting with 0x');
-  }
-
   if (!transaction || typeof transaction !== 'object') {
     throw new Error('Transaction must be a valid transaction object');
   }
@@ -51,7 +47,7 @@ export async function signTransaction(
     );
   }
 
-  const account = privateKeyToAccount(privateKey);
+  const account = validateAndCreateAccount(privateKey);
   const serializedTransaction = await account.signTransaction(transaction);
 
   return {

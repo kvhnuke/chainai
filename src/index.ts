@@ -1,12 +1,32 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import * as readline from 'readline';
 import { signMessage } from './commands/sign-message';
 import { sign } from './commands/sign';
 import { signTypedData } from './commands/sign-typed-data';
 import { signTransaction } from './commands/sign-transaction';
 import { getBalance } from './commands/get-balance';
+import { send } from './commands/send';
+import { broadcast } from './commands/broadcast';
+import { whoAmI } from './commands/who-am-i';
 import type { Hex } from 'viem';
+
+function askYesNo(question: string): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stderr,
+  });
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(
+        answer.trim().toLowerCase() === 'y' ||
+          answer.trim().toLowerCase() === 'yes',
+      );
+    });
+  });
+}
 
 const program = new Command();
 
@@ -191,9 +211,9 @@ program
   .description(
     'Get the balance of a native token or ERC-20 token for a given address',
   )
-  .requiredOption(
+  .option(
     '-a, --address <address>',
-    'Wallet address (0x-prefixed hex string)',
+    'Wallet address (0x-prefixed hex string). Falls back to address derived from CHAINAI_PRIVATE_KEY env var.',
   )
   .option(
     '-n, --network <network>',
@@ -208,14 +228,24 @@ program
   .option('--all', 'Return all token balances (native + ERC-20)')
   .action(
     async (options: {
-      address: string;
+      address?: string;
       network: string;
       token: string;
       all?: boolean;
     }) => {
       try {
+        let address = options.address;
+        if (!address) {
+          const privateKey = process.env.CHAINAI_PRIVATE_KEY;
+          if (!privateKey) {
+            throw new Error(
+              'Address is required. Provide it via -a flag or set CHAINAI_PRIVATE_KEY environment variable.',
+            );
+          }
+          address = whoAmI({ privateKey: privateKey as Hex }).address;
+        }
         const result = await getBalance({
-          address: options.address as Hex,
+          address: address as Hex,
           network: options.network,
           token: options.token,
           all: options.all,
@@ -229,6 +259,136 @@ program
       }
     },
   );
+
+program
+  .command('send')
+  .description(
+    'Build and sign a transaction to send native tokens or ERC-20 tokens',
+  )
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .requiredOption(
+    '--to <address>',
+    'Recipient address (0x-prefixed hex string)',
+  )
+  .requiredOption(
+    '-t, --token <token>',
+    'Token contract address (use 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee for native token)',
+  )
+  .requiredOption(
+    '--amount <amount>',
+    'Amount to send in human-readable units (e.g. "1.5")',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .option(
+    '-b, --broadcast',
+    'Automatically broadcast the transaction after signing',
+  )
+  .action(
+    async (options: {
+      privateKey?: string;
+      to: string;
+      token: string;
+      amount: string;
+      network: string;
+      broadcast?: boolean;
+    }) => {
+      try {
+        const privateKey =
+          options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+        if (!privateKey) {
+          throw new Error(
+            'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+          );
+        }
+        const result = await send({
+          privateKey: privateKey as Hex,
+          to: options.to as Hex,
+          token: options.token,
+          amount: options.amount,
+          network: options.network,
+        });
+        console.log(`CHAINAI_OK: Transaction created successfully`);
+        console.log(JSON.stringify(result, null, 2));
+
+        const shouldBroadcast =
+          options.broadcast ||
+          (await askYesNo('\nBroadcast this transaction? (y/N): '));
+        if (shouldBroadcast) {
+          const broadcastResult = await broadcast({
+            serializedTransaction: result.serializedTransaction as Hex,
+            network: options.network,
+          });
+          console.log(`CHAINAI_OK: Transaction broadcast successfully`);
+          console.log(JSON.stringify(broadcastResult, null, 2));
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command('broadcast')
+  .description('Broadcast a serialized signed transaction to the network')
+  .requiredOption(
+    '-s, --serialized-transaction <hex>',
+    'Serialized signed transaction (0x-prefixed hex string)',
+  )
+  .option(
+    '-n, --network <network>',
+    'Network name or chain ID (default: mainnet)',
+    'mainnet',
+  )
+  .action(
+    async (options: { serializedTransaction: string; network: string }) => {
+      try {
+        const result = await broadcast({
+          serializedTransaction: options.serializedTransaction as Hex,
+          network: options.network,
+        });
+        console.log(`CHAINAI_OK: Transaction broadcast successfully`);
+        console.log(JSON.stringify(result, null, 2));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command('who-am-i')
+  .description('Return the address derived from a private key')
+  .option(
+    '-k, --private-key <key>',
+    'Private key (hex string starting with 0x, or set CHAINAI_PRIVATE_KEY env var)',
+  )
+  .action(async (options: { privateKey?: string }) => {
+    try {
+      const privateKey = options.privateKey ?? process.env.CHAINAI_PRIVATE_KEY;
+      if (!privateKey) {
+        throw new Error(
+          'Private key is required. Provide it via -k flag or CHAINAI_PRIVATE_KEY environment variable.',
+        );
+      }
+      const result = whoAmI({ privateKey: privateKey as Hex });
+      console.log(`CHAINAI_OK: Address retrieved successfully`);
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`CHAINAI_ERR: EXECUTION_FAILED \u2014 ${message}`);
+      process.exit(1);
+    }
+  });
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(

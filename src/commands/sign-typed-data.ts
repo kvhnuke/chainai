@@ -1,5 +1,5 @@
-import { privateKeyToAccount } from 'viem/accounts';
 import type { Hex, TypedDataDomain } from 'viem';
+import { validateAndCreateAccount } from '../utils';
 
 export interface TypedDataField {
   name: string;
@@ -28,10 +28,6 @@ export async function signTypedData(
 ): Promise<SignTypedDataResult> {
   const { privateKey, domain, types, primaryType, message } = input;
 
-  if (!privateKey || !privateKey.startsWith('0x')) {
-    throw new Error('Private key must be a hex string starting with 0x');
-  }
-
   if (!domain || typeof domain !== 'object') {
     throw new Error('Domain must be a valid EIP-712 domain object');
   }
@@ -48,7 +44,7 @@ export async function signTypedData(
     throw new Error('Message must be a valid object');
   }
 
-  const account = privateKeyToAccount(privateKey);
+  const account = validateAndCreateAccount(privateKey);
   const signature = await account.signTypedData({
     domain,
     types,

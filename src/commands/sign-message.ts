@@ -1,6 +1,6 @@
-import { privateKeyToAccount } from 'viem/accounts';
 import { isHex } from 'viem';
 import type { Hex } from 'viem';
+import { validateAndCreateAccount } from '../utils';
 
 export interface SignMessageInput {
   privateKey: Hex;
@@ -23,15 +23,11 @@ export async function signMessage(
 ): Promise<SignMessageResult> {
   const { privateKey, message } = input;
 
-  if (!privateKey || !privateKey.startsWith('0x')) {
-    throw new Error('Private key must be a hex string starting with 0x');
-  }
-
   if (!message || message.length === 0) {
     throw new Error('Message must be a non-empty string');
   }
 
-  const account = privateKeyToAccount(privateKey);
+  const account = validateAndCreateAccount(privateKey);
 
   if (input.raw) {
     if (!isHex(message, { strict: true })) {
