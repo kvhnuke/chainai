@@ -56,6 +56,8 @@ CHAINAI_ERR: <ERROR_CODE> — <description>
 4. **Retry strategy**: For `TIMEOUT` and `EXECUTION_FAILED` errors, retry up to 2 times with exponential backoff before escalating.
 5. **Do not prompt for user input**: This tool is non-interactive. All required parameters must be passed as arguments or flags.
 6. **Keep `agents.md` up to date**: Whenever you add, modify, or remove a command, flag, environment variable, or behavior in the codebase, you **must** update this file (`agents.md`) to reflect the change. This file is the single source of truth for agent consumers and must always match the current state of the CLI.
+7. **Keep `README.md` up to date**: Whenever you add, modify, or remove a command or feature, update `README.md` to reflect the change so that human users always have accurate documentation.
+8. **Keep `skills/chainai.md` up to date**: Whenever you add, modify, or remove a command, flag, or behavior, update `skills/chainai.md` to reflect the change. This is the agent skill file consumed by external AI agents and must stay in sync with the CLI.
 
 ## Development
 

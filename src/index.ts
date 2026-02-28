@@ -550,7 +550,7 @@ program
       console.log(`CHAINAI_OK: Wallet generated successfully`);
       console.log(JSON.stringify(result, null, 2));
       console.error(
-        `\nTo use this wallet, either:\n  1. Pass it via -k flag: -k ${result.privateKey}\n  2. Save it to your environment: export CHAINAI_PRIVATE_KEY=${result.privateKey}`,
+        `\nTo use this wallet, either:\n  1. Pass it via -k flag: -k <private_key>\n  2. Save it to your environment: export CHAINAI_PRIVATE_KEY=<private_key>`,
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
