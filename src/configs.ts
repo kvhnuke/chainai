@@ -12,7 +12,7 @@ const SUPPORTED_NETWORKS_NAME_MAP: Record<
   },
   [bsc.id]: {
     balances: `bsc`,
-    nodeUrl: `https://nodes.mewapi.io/rpc/eth`,
+    nodeUrl: `https://nodes.mewapi.io/rpc/bsc`,
   },
 };
 

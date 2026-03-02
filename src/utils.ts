@@ -106,7 +106,13 @@ export function createNetworkClient(
 ): PublicClient {
   return createPublicClient({
     chain,
-    transport: http(networkConfig.nodeUrl),
+    transport: http(networkConfig.nodeUrl, {
+      fetchOptions: {
+        headers: {
+          'User-Agent': 'chainai/request',
+        },
+      },
+    }),
   }) as PublicClient;
 }
 
