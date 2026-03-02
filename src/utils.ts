@@ -97,6 +97,13 @@ export function getNetworkConfig(chain: Chain) {
   return networkConfig;
 }
 
+export const ViemFetchOptions = {
+  fetchOptions: {
+    headers: {
+      'User-Agent': 'chainai/request',
+    },
+  },
+};
 /**
  * Creates a viem PublicClient for the given chain.
  */
@@ -106,13 +113,7 @@ export function createNetworkClient(
 ): PublicClient {
   return createPublicClient({
     chain,
-    transport: http(networkConfig.nodeUrl, {
-      fetchOptions: {
-        headers: {
-          'User-Agent': 'chainai/request',
-        },
-      },
-    }),
+    transport: http(networkConfig.nodeUrl, ViemFetchOptions),
   }) as PublicClient;
 }
 

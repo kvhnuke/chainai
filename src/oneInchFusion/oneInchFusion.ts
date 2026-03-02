@@ -12,7 +12,6 @@ import type {
   QuoteOutputType,
 } from './oneInchTypes';
 import {
-  createPublicClient,
   createWalletClient,
   erc20Abi,
   http,
@@ -27,7 +26,11 @@ import { ONEINCH_APPROVAL_ADDRESS } from './configs';
 import { bsc, mainnet } from 'viem/chains';
 import { Web3ProviderConnector } from './oneInchProvider';
 import type { AxiosError } from 'axios';
-import { NATIVE_TOKEN_ADDRESS } from '../utils';
+import {
+  createNetworkClient,
+  NATIVE_TOKEN_ADDRESS,
+  ViemFetchOptions,
+} from '../utils';
 
 const getFusionParams = (config: QuoteInputType): QuoteParams | OrderParams => {
   const { fromTokenAddress, toTokenAddress, amount, fromAddress } = config;
@@ -53,14 +56,11 @@ class OneInchFusion {
     const account = privateKeyToAccount(privateKey);
     this.account = account;
     this.chain = chainId === 1 ? mainnet : bsc;
-    this.publicClient = createPublicClient({
-      chain: this.chain,
-      transport: http(nodeUrl),
-    });
+    this.publicClient = createNetworkClient(this.chain, { nodeUrl });
     this.walletClient = createWalletClient({
       account,
       chain: this.chain,
-      transport: http(nodeUrl),
+      transport: http(nodeUrl, ViemFetchOptions),
     });
     this.web3Provider = new Web3ProviderConnector(
       this.publicClient,
