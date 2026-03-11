@@ -7,7 +7,8 @@ const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 // Mock getTokenBalances and createNetworkClient to avoid real API/RPC calls
 vi.mock('../src/utils', async () => {
-  const actual = await vi.importActual<typeof import('../src/utils')>('../src/utils');
+  const actual =
+    await vi.importActual<typeof import('../src/utils')>('../src/utils');
   return {
     ...actual,
     getTokenBalances: vi.fn().mockResolvedValue([
@@ -126,13 +127,20 @@ describe('getBalance', () => {
     ).rejects.toThrow('Address must be a valid 0x-prefixed hex string');
   });
 
-  it('should throw when token is not found', async () => {
-    await expect(
-      getBalance({
-        address: TEST_ADDRESS,
-        token: '0x0000000000000000000000000000000000000001',
-      }),
-    ).rejects.toThrow('not found');
+  it('should return zero balance when token is not found', async () => {
+    const result = await getBalance({
+      address: TEST_ADDRESS,
+      token: '0x0000000000000000000000000000000000000001',
+    });
+    expect(result).toEqual({
+      address: TEST_ADDRESS,
+      network: 'Ethereum',
+      token: '0x0000000000000000000000000000000000000001',
+      balance: '0',
+      rawBalance: '0',
+      decimals: 0,
+      contract: '0x0000000000000000000000000000000000000001',
+    });
   });
 
   it('should throw for non-address token value', async () => {

@@ -83,9 +83,15 @@ export async function getBalance(
   const found = balances.find((t) => t.contract.toLowerCase() === tokenLower);
 
   if (!found) {
-    throw new Error(
-      `Token "${token}" not found for address ${address} on ${chain.name}. The address may not hold this token.`,
-    );
+    return {
+      address,
+      network: chain.name,
+      token: token,
+      balance: '0',
+      rawBalance: '0',
+      decimals: 0,
+      contract: token,
+    };
   }
 
   const rawBalance = BigInt(found.balance);
